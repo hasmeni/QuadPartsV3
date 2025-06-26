@@ -1,0 +1,766 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #131419;
+    --bg-secondary: #1f2028;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --border-color: #2d2d3d;
+  }
+
+  :root[data-theme="dark"] {
+    --bg-primary: #131419;
+    --bg-secondary: #1f2028;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --border-color: #2d2d3d;
+  }
+
+  :root[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f1f5f9;
+    --text-primary: #FF5733;
+    --text-secondary: #8A9A5B;
+    --border-color: #e2e8f0;
+    --accent-primary: #8c8058;
+    --accent-secondary: #1f7282;
+  }
+
+  :root[data-theme="midnight"] {
+    --bg-primary: #30413d;
+    --bg-secondary: #445758;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --border-color: #6192ab;
+    --accent-primary: #3f2930;
+    --accent-secondary: #6192ab;
+  }
+
+  :root[data-theme="cyberpunk"] {
+    --bg-primary: #18181b;
+    --bg-secondary: #27272a;
+    --text-primary: #fef08a;
+    --text-secondary: #fde047;
+    --border-color: #52525b;
+  }
+
+  :root[data-theme="matrix"] {
+    --bg-primary: #0c0c0c;
+    --bg-secondary: #171717;
+    --text-primary: #22c55e;
+    --text-secondary: #16a34a;
+    --border-color: #262626;
+  }
+
+  :root[data-theme="blackOrange"] {
+    --bg-primary: #000000;
+    --bg-secondary: #1a1a1a;
+    --text-primary: #ff6b00;
+    --text-secondary: #ff9248;
+    --border-color: #333333;
+  }
+
+  :root[data-theme="sunset"] {
+    --bg-primary: #dad9d7;
+    --bg-secondary: #b1c7ca;
+    --text-primary: #2d3748;
+    --text-secondary: #4a5568;
+    --border-color: #8094c4;
+    --accent-primary: #ed6735;
+    --accent-secondary: #b9ecfb;
+  }
+
+  :root[data-theme="summer"] {
+    --bg-primary: #85d5a4;
+    --bg-secondary: #2eaa97;
+    --text-primary: #1a202c;
+    --text-secondary: #2d3748;
+    --border-color: #fccb33;
+    --accent-primary: #f95849;
+    --accent-secondary: #f96e0e;
+  }
+
+  html {
+    @apply antialiased;
+    color: var(--text-primary);
+  }
+  
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  /* Apply theme colors to common components */
+  .bg-neutral-950 {
+    background-color: var(--bg-primary);
+  }
+
+  .bg-neutral-900 {
+    background-color: var(--bg-secondary);
+  }
+
+  .bg-neutral-800 {
+    background-color: var(--bg-secondary);
+  }
+
+  .bg-neutral-700 {
+    background-color: var(--bg-secondary);
+  }
+
+  .bg-neutral-600 {
+    background-color: var(--bg-secondary);
+  }
+
+  .border-neutral-800 {
+    border-color: var(--border-color);
+  }
+
+  .border-neutral-700 {
+    border-color: var(--border-color);
+  }
+
+  .border-neutral-600 {
+    border-color: var(--border-color);
+  }
+
+  .text-neutral-400 {
+    color: var(--text-secondary);
+  }
+
+  .text-neutral-300 {
+    color: var(--text-secondary);
+  }
+
+  .text-neutral-500 {
+    color: var(--text-secondary);
+  }
+
+  .text-white {
+    color: var(--text-primary);
+  }
+
+  .text-neutral-200 {
+    color: var(--text-primary);
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background-color: var(--bg-secondary);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-700 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-600;
+  }
+  
+  /* Focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-opacity-75;
+  }
+  
+  /* Aspect ratio utilities */
+  .aspect-w-1 {
+    position: relative;
+    padding-bottom: calc(var(--tw-aspect-h) / var(--tw-aspect-w) * 100%);
+    --tw-aspect-w: 1;
+  }
+  
+  .aspect-h-1 {
+    --tw-aspect-h: 1;
+  }
+  
+  .aspect-w-1 > * {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+  
+  /* Line clamp */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;  
+    overflow: hidden;
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;  
+    overflow: hidden;
+  }
+}
+
+/* Liquid Glass Effect Styles */
+@layer components {
+  .liquid-glass {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    transition: left 0.5s;
+    z-index: 1;
+  }
+
+  .liquid-glass:hover::before {
+    left: 100%;
+  }
+
+  .liquid-glass::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .liquid-glass:hover::after {
+    opacity: 1;
+  }
+
+  .liquid-glass-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Liquid animation for background */
+  .liquid-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+  }
+
+  .liquid-bg::before,
+  .liquid-bg::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    animation: liquid-float 20s ease-in-out infinite;
+    opacity: 0.1;
+  }
+
+  .liquid-bg::before {
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+  }
+
+  .liquid-bg::after {
+    bottom: 10%;
+    right: 10%;
+    animation-delay: -10s;
+  }
+
+  @keyframes liquid-float {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    25% {
+      transform: translate(100px, 50px) scale(1.1);
+    }
+    50% {
+      transform: translate(50px, 100px) scale(0.9);
+    }
+    75% {
+      transform: translate(-50px, 50px) scale(1.05);
+    }
+  }
+
+  /* Liquid card effect */
+  .liquid-card {
+    @apply liquid-glass;
+    transition: all 0.3s ease;
+  }
+
+  .liquid-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Liquid button effect */
+  .liquid-button {
+    @apply liquid-glass;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .liquid-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+  }
+
+  .liquid-button:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .liquid-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Liquid input effect */
+  .liquid-input {
+    @apply liquid-glass;
+    transition: all 0.3s ease;
+  }
+
+  .liquid-input:focus {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+  }
+
+  /* Liquid modal effect */
+  .liquid-modal {
+    @apply liquid-glass;
+    animation: liquid-modal-enter 0.3s ease-out;
+  }
+
+  @keyframes liquid-modal-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.8) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  /* Liquid sidebar effect */
+  .liquid-sidebar {
+    @apply liquid-glass;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Liquid header effect */
+  .liquid-header {
+    @apply liquid-glass;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Theme-specific liquid effects */
+  :root[data-theme="light"] .liquid-glass {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  :root[data-theme="dark"] .liquid-glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  :root[data-theme="midnight"] .liquid-glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  :root[data-theme="midnight"] .liquid-bg::before,
+  :root[data-theme="midnight"] .liquid-bg::after {
+    background: linear-gradient(45deg, #3f2930, #6192ab);
+  }
+
+  :root[data-theme="cyberpunk"] .liquid-glass {
+    background: rgba(254, 240, 138, 0.1);
+    border: 1px solid rgba(254, 240, 138, 0.2);
+  }
+
+  :root[data-theme="cyberpunk"] .liquid-bg::before,
+  :root[data-theme="cyberpunk"] .liquid-bg::after {
+    background: linear-gradient(45deg, #fef08a, #fde047);
+  }
+
+  :root[data-theme="matrix"] .liquid-glass {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+
+  :root[data-theme="matrix"] .liquid-bg::before,
+  :root[data-theme="matrix"] .liquid-bg::after {
+    background: linear-gradient(45deg, #22c55e, #16a34a);
+  }
+
+  :root[data-theme="blackOrange"] .liquid-glass {
+    background: rgba(255, 107, 0, 0.1);
+    border: 1px solid rgba(255, 107, 0, 0.2);
+  }
+
+  :root[data-theme="blackOrange"] .liquid-bg::before,
+  :root[data-theme="blackOrange"] .liquid-bg::after {
+    background: linear-gradient(45deg, #ff6b00, #ff9248);
+  }
+
+  :root[data-theme="sunset"] .liquid-glass {
+    background: rgba(218, 217, 215, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  :root[data-theme="sunset"] .liquid-bg::before,
+  :root[data-theme="sunset"] .liquid-bg::after {
+    background: linear-gradient(45deg, #ed6735, #b9ecfb);
+  }
+
+  /* Sunset theme specific styling */
+  :root[data-theme="sunset"] .bg-primary-600 {
+    background-color: var(--accent-primary);
+  }
+
+  :root[data-theme="sunset"] .bg-primary-700 {
+    background-color: #d45a2a;
+  }
+
+  :root[data-theme="sunset"] .bg-secondary-600 {
+    background-color: var(--accent-secondary);
+  }
+
+  :root[data-theme="sunset"] .bg-secondary-700 {
+    background-color: #a6d8e8;
+  }
+
+  :root[data-theme="sunset"] .text-primary-400 {
+    color: var(--accent-primary);
+  }
+
+  :root[data-theme="sunset"] .border-primary-500 {
+    border-color: var(--accent-primary);
+  }
+
+  :root[data-theme="sunset"] .ring-primary-500 {
+    --tw-ring-color: var(--accent-primary);
+  }
+
+  /* Midnight theme specific styling */
+  :root[data-theme="midnight"] .bg-primary-600 {
+    background-color: var(--accent-primary);
+  }
+
+  :root[data-theme="midnight"] .bg-primary-700 {
+    background-color: #2a1f28;
+  }
+
+  :root[data-theme="midnight"] .bg-secondary-600 {
+    background-color: var(--accent-secondary);
+  }
+
+  :root[data-theme="midnight"] .bg-secondary-700 {
+    background-color: #4a7a9a;
+  }
+
+  :root[data-theme="midnight"] .text-primary-400 {
+    color: var(--accent-secondary);
+  }
+
+  :root[data-theme="midnight"] .border-primary-500 {
+    border-color: var(--accent-secondary);
+  }
+
+  :root[data-theme="midnight"] .ring-primary-500 {
+    --tw-ring-color: var(--accent-secondary);
+  }
+
+  :root[data-theme="summer"] .liquid-glass {
+    background: rgba(133, 213, 164, 0.8);
+    border: 1px solid rgba(252, 203, 51, 0.3);
+  }
+
+  :root[data-theme="summer"] .liquid-bg::before,
+  :root[data-theme="summer"] .liquid-bg::after {
+    background: linear-gradient(45deg, #f95849, #f96e0e);
+  }
+
+  /* Summer theme specific styling */
+  :root[data-theme="summer"] .bg-primary-600 {
+    background-color: var(--accent-primary);
+  }
+
+  :root[data-theme="summer"] .bg-primary-700 {
+    background-color: #e04a3b;
+  }
+
+  :root[data-theme="summer"] .bg-secondary-600 {
+    background-color: var(--accent-secondary);
+  }
+
+  :root[data-theme="summer"] .bg-secondary-700 {
+    background-color: #e05d0c;
+  }
+
+  :root[data-theme="summer"] .text-primary-400 {
+    color: var(--accent-primary);
+  }
+
+  :root[data-theme="summer"] .border-primary-500 {
+    border-color: var(--accent-primary);
+  }
+
+  :root[data-theme="summer"] .ring-primary-500 {
+    --tw-ring-color: var(--accent-primary);
+  }
+
+  /* Summer theme neutral color overrides for better contrast */
+  :root[data-theme="summer"] .bg-neutral-950 {
+    background-color: var(--bg-primary);
+  }
+
+  :root[data-theme="summer"] .bg-neutral-900 {
+    background-color: var(--bg-secondary);
+  }
+
+  :root[data-theme="summer"] .bg-neutral-800 {
+    background-color: var(--bg-secondary);
+  }
+
+  :root[data-theme="summer"] .bg-neutral-700 {
+    background-color: #26a08a;
+  }
+
+  :root[data-theme="summer"] .bg-neutral-600 {
+    background-color: #1f8a75;
+  }
+
+  :root[data-theme="summer"] .text-white {
+    color: var(--text-primary);
+  }
+
+  :root[data-theme="summer"] .text-neutral-200 {
+    color: var(--text-primary);
+  }
+
+  :root[data-theme="summer"] .text-neutral-300 {
+    color: var(--text-secondary);
+  }
+
+  :root[data-theme="summer"] .text-neutral-400 {
+    color: var(--text-secondary);
+  }
+
+  :root[data-theme="summer"] .text-neutral-500 {
+    color: var(--text-secondary);
+  }
+
+  /* Dropdown options styling for all themes */
+  select option {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 8px 12px;
+  }
+
+  /* Theme-specific dropdown option styling */
+  :root[data-theme="light"] select option {
+    background-color: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+  }
+
+  :root[data-theme="light"] select option:hover {
+    background-color: #f1f5f9;
+  }
+
+  :root[data-theme="dark"] select option {
+    background-color: #1f2028;
+    color: #ffffff;
+    border: 1px solid #2d2d3d;
+  }
+
+  :root[data-theme="dark"] select option:hover {
+    background-color: #2d2d3d;
+  }
+
+  :root[data-theme="midnight"] select option {
+    background-color: #445758;
+    color: #e2e8f0;
+    border: 1px solid #6192ab;
+  }
+
+  :root[data-theme="midnight"] select option:hover {
+    background-color: #3f2930;
+  }
+
+  :root[data-theme="cyberpunk"] select option {
+    background-color: #27272a;
+    color: #fef08a;
+    border: 1px solid #52525b;
+  }
+
+  :root[data-theme="cyberpunk"] select option:hover {
+    background-color: #3f3f46;
+  }
+
+  :root[data-theme="matrix"] select option {
+    background-color: #171717;
+    color: #22c55e;
+    border: 1px solid #262626;
+  }
+
+  :root[data-theme="matrix"] select option:hover {
+    background-color: #262626;
+  }
+
+  :root[data-theme="blackOrange"] select option {
+    background-color: #1a1a1a;
+    color: #ff6b00;
+    border: 1px solid #333333;
+  }
+
+  :root[data-theme="blackOrange"] select option:hover {
+    background-color: #333333;
+  }
+
+  :root[data-theme="sunset"] select option {
+    background-color: #b1c7ca;
+    color: #2d3748;
+    border: 1px solid #8094c4;
+  }
+
+  :root[data-theme="sunset"] select option:hover {
+    background-color: #ed6735;
+    color: #ffffff;
+  }
+
+  :root[data-theme="summer"] select option {
+    background-color: #2eaa97;
+    color: #1a202c;
+    border: 1px solid #fccb33;
+  }
+
+  :root[data-theme="summer"] select option:hover {
+    background-color: #f95849;
+    color: #ffffff;
+  }
+
+  /* Light theme specific styling */
+  :root[data-theme="light"] .bg-primary-600 {
+    background-color: var(--accent-primary);
+  }
+
+  :root[data-theme="light"] .bg-primary-700 {
+    background-color: #7a6f4a;
+  }
+
+  :root[data-theme="light"] .bg-secondary-600 {
+    background-color: var(--accent-secondary);
+  }
+
+  :root[data-theme="light"] .bg-secondary-700 {
+    background-color: #1a5f6e;
+  }
+
+  :root[data-theme="light"] .text-primary-400 {
+    color: var(--accent-primary);
+  }
+
+  :root[data-theme="light"] .text-primary-500 {
+    color: var(--accent-primary);
+  }
+
+  :root[data-theme="light"] .border-primary-500 {
+    border-color: var(--accent-primary);
+  }
+
+  :root[data-theme="light"] .ring-primary-500 {
+    --tw-ring-color: var(--accent-primary);
+  }
+
+  :root[data-theme="light"] .text-accent-1 {
+    color: #FF5733;
+  }
+
+  :root[data-theme="light"] .text-accent-2 {
+    color: #8A9A5B;
+  }
+
+  :root[data-theme="light"] .text-accent-3 {
+    color: #8c8058;
+  }
+
+  :root[data-theme="light"] .text-accent-4 {
+    color: #1f7282;
+  }
+
+  :root[data-theme="light"] .bg-accent-1 {
+    background-color: #FF5733;
+  }
+
+  :root[data-theme="light"] .bg-accent-2 {
+    background-color: #8A9A5B;
+  }
+
+  :root[data-theme="light"] .bg-accent-3 {
+    background-color: #8c8058;
+  }
+
+  :root[data-theme="light"] .bg-accent-4 {
+    background-color: #1f7282;
+  }
+
+  :root[data-theme="light"] .border-accent-1 {
+    border-color: #FF5733;
+  }
+
+  :root[data-theme="light"] .border-accent-2 {
+    border-color: #8A9A5B;
+  }
+
+  :root[data-theme="light"] .border-accent-3 {
+    border-color: #8c8058;
+  }
+
+  :root[data-theme="light"] .border-accent-4 {
+    border-color: #1f7282;
+  }
+}

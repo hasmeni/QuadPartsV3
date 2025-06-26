@@ -76,7 +76,7 @@ class ErrorBoundary extends React.Component<
 }
 
 function App() {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme, customColors } = useThemeStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -87,6 +87,44 @@ function App() {
       
       // Set the theme attribute immediately
       document.documentElement.setAttribute('data-theme', savedTheme);
+      
+      // If custom theme, apply custom colors
+      if (savedTheme === 'custom') {
+        const savedColors = localStorage.getItem('customThemeColors');
+        if (savedColors) {
+          try {
+            const colors = JSON.parse(savedColors);
+            // Apply custom colors to CSS
+            const root = document.documentElement;
+            const hexToRgb = (hex: string) => {
+              const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+              return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+              } : null;
+            };
+            
+            const accentPrimaryRgb = hexToRgb(colors.accentPrimary);
+            
+            root.style.setProperty('--bg-primary', colors.bgPrimary);
+            root.style.setProperty('--bg-secondary', colors.bgSecondary);
+            root.style.setProperty('--text-primary', colors.textPrimary);
+            root.style.setProperty('--text-secondary', colors.textSecondary);
+            root.style.setProperty('--border-color', colors.borderColor);
+            root.style.setProperty('--accent-primary', colors.accentPrimary);
+            root.style.setProperty('--accent-secondary', colors.accentSecondary);
+            
+            if (accentPrimaryRgb) {
+              root.style.setProperty('--accent-primary-rgb', `${accentPrimaryRgb.r}, ${accentPrimaryRgb.g}, ${accentPrimaryRgb.b}`);
+            }
+            
+            console.log('Custom colors applied on startup:', colors);
+          } catch (error) {
+            console.error('Error applying custom colors on startup:', error);
+          }
+        }
+      }
       
       // Update the store if needed
       if (theme !== savedTheme) {

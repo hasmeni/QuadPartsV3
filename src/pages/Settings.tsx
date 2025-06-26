@@ -7,26 +7,30 @@ import { useBuildStore } from '../store/buildStore';
 import { useGalleryStore } from '../store/galleryStore';
 import { useLinkStore } from '../store/linkStore';
 import { useTodoStore } from '../store/todoStore';
+import { useFlightLogStore } from '../store/flightLogStore';
 import { useSettingsStore } from '../store/settingsStore';
+import ColorPicker from '../components/ColorPicker';
 import { Download, Upload, AlertTriangle } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const { addToast } = useToaster();
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme, customColors, setCustomColors } = useThemeStore();
   const { settings, updateSettings } = useSettingsStore();
   
   // Get all current data from stores
   const { parts, categories } = useInventoryStore();
   const { locations } = useStorageLocationStore();
   const { builds } = useBuildStore();
-  const { items: galleryItems } = useGalleryStore();
-  const { links } = useLinkStore();
-  const { todos } = useTodoStore();
+  const { items: galleryItems, addItem: addGalleryItem } = useGalleryStore();
+  const { links, addLink } = useLinkStore();
+  const { todos, addTodo } = useTodoStore();
+  const { flightLogs, addFlightLog } = useFlightLogStore();
   
   const [backupInProgress, setBackupInProgress] = useState(false);
   const [restoreInProgress, setRestoreInProgress] = useState(false);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showCustomColors, setShowCustomColors] = useState(theme === 'custom');
   
   const handleSettingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -37,6 +41,9 @@ const Settings: React.FC = () => {
       
       // Handle theme change immediately
       setTheme(value);
+      
+      // Show/hide custom color pickers
+      setShowCustomColors(value === 'custom');
       
       console.log('Theme change completed. New theme:', value);
       console.log('Document data-theme attribute:', document.documentElement.getAttribute('data-theme'));
@@ -51,6 +58,11 @@ const Settings: React.FC = () => {
     });
   };
   
+  const handleCustomColorChange = (colorKey: keyof typeof customColors, value: string) => {
+    setCustomColors({ [colorKey]: value });
+    addToast('success', `${colorKey} color updated`);
+  };
+  
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     // Settings are already saved in the store when changed
@@ -59,6 +71,97 @@ const Settings: React.FC = () => {
   
   // Create comprehensive backup data with all current state
   const createBackupData = () => {
+    // Helper function to get data from localStorage for backward compatibility
+    const getDataFromStorage = (key: string, defaultValue: any[] = []) => {
+      try {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : defaultValue;
+      } catch (error) {
+        console.error(`Error reading ${key} from localStorage:`, error);
+        return defaultValue;
+      }
+    };
+
+    // Helper function to check multiple possible keys for backward compatibility
+    const getDataFromMultipleKeys = (keys: string[], defaultValue: any[] = []) => {
+      for (const key of keys) {
+        try {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            const data = JSON.parse(saved);
+            if (Array.isArray(data) && data.length > 0) {
+              console.log(`Found data in ${key}:`, data.length, 'items');
+              return data;
+            }
+            // Handle case where data might be wrapped in an object
+            if (typeof data === 'object' && data !== null) {
+              // Check for common property names
+              const possibleArrays = ['items', 'galleryItems', 'builds', 'links', 'todos', 'data'];
+              for (const prop of possibleArrays) {
+                if (Array.isArray(data[prop]) && data[prop].length > 0) {
+                  console.log(`Found data in ${key}.${prop}:`, data[prop].length, 'items');
+                  return data[prop];
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error reading ${key} from localStorage:`, error);
+        }
+      }
+      return defaultValue;
+    };
+
+    // Get data from both stores and localStorage for maximum compatibility
+    const galleryData = galleryItems?.length > 0 ? galleryItems : getDataFromMultipleKeys(['quadparts_gallery_data', 'galleryItems', 'gallery']);
+    const buildsData = builds?.length > 0 ? builds : getDataFromMultipleKeys(['quadparts_builds_data', 'builds', 'buildNotes', 'build-notes', 'droneBuilds']);
+    const linksData = links?.length > 0 ? links : getDataFromMultipleKeys(['quadparts_links_data', 'links', 'bookmarks']);
+    const todosData = todos?.length > 0 ? todos : getDataFromMultipleKeys(['quadparts_todos_data', 'todos', 'todo', 'tasks']);
+
+    // Debug logging to help identify data sources
+    console.log('Export data sources:', {
+      galleryFromStore: galleryItems?.length || 0,
+      galleryFromStorage: getDataFromMultipleKeys(['quadparts_gallery_data', 'galleryItems', 'gallery']).length,
+      buildsFromStore: builds?.length || 0,
+      buildsFromStorage: getDataFromMultipleKeys(['quadparts_builds_data', 'builds', 'buildNotes', 'build-notes', 'droneBuilds']).length,
+      linksFromStore: links?.length || 0,
+      linksFromStorage: getDataFromMultipleKeys(['quadparts_links_data', 'links', 'bookmarks']).length,
+      todosFromStore: todos?.length || 0,
+      todosFromStorage: getDataFromMultipleKeys(['quadparts_todos_data', 'todos', 'todo', 'tasks']).length
+    });
+
+    // Additional debug info for build notes specifically
+    console.log('Build notes debug info:', {
+      buildsFromStore: builds,
+      buildsFromStorageKeys: ['quadparts_builds_data', 'builds', 'buildNotes', 'build-notes', 'droneBuilds'],
+      finalBuildsData: buildsData,
+      buildsDataLength: buildsData?.length || 0
+    });
+
+    // Additional debug info for links specifically
+    console.log('Links debug info:', {
+      linksFromStore: links,
+      linksFromStorageKeys: ['quadparts_links_data', 'links', 'bookmarks'],
+      finalLinksData: linksData,
+      linksDataLength: linksData?.length || 0
+    });
+
+    // Additional debug info for todos specifically
+    console.log('Todos debug info:', {
+      todosFromStore: todos,
+      todosFromStorageKeys: ['quadparts_todos_data', 'todos', 'todo', 'tasks'],
+      finalTodosData: todosData,
+      todosDataLength: todosData?.length || 0
+    });
+
+    // Additional debug info for gallery specifically
+    console.log('Gallery debug info:', {
+      galleryFromStore: galleryItems,
+      galleryFromStorageKeys: ['quadparts_gallery_data', 'galleryItems', 'gallery'],
+      finalGalleryData: galleryData,
+      galleryDataLength: galleryData?.length || 0
+    });
+
     const backupData = {
       version: '1.0.0',
       timestamp: new Date().toISOString(),
@@ -76,16 +179,19 @@ const Settings: React.FC = () => {
         storageLocations: locations || [],
         
         // Build notes
-        builds: builds || [],
+        builds: buildsData || [],
         
         // Gallery items
-        galleryItems: galleryItems || [],
+        galleryItems: galleryData || [],
         
         // Links
-        links: links || [],
+        links: linksData || [],
         
         // Todo items
-        todos: todos || [],
+        todos: todosData || [],
+        
+        // Flight logs
+        flightLogs: flightLogs || [],
         
         // Application settings
         settings: {
@@ -98,10 +204,11 @@ const Settings: React.FC = () => {
           totalParts: parts?.length || 0,
           totalCategories: categories?.length || 0,
           totalLocations: locations?.length || 0,
-          totalBuilds: builds?.length || 0,
-          totalGalleryItems: galleryItems?.length || 0,
-          totalLinks: links?.length || 0,
-          totalTodos: todos?.length || 0,
+          totalBuilds: buildsData?.length || 0,
+          totalGalleryItems: galleryData?.length || 0,
+          totalLinks: linksData?.length || 0,
+          totalTodos: todosData?.length || 0,
+          totalFlightLogs: flightLogs?.length || 0,
           exportDate: new Date().toISOString(),
           exportedBy: 'QuadParts Inventory System'
         }
@@ -266,7 +373,7 @@ const Settings: React.FC = () => {
     }
     
     // Check for at least some valid data arrays (more flexible validation)
-    const validFields = ['parts', 'categories', 'storageLocations', 'builds', 'galleryItems', 'links', 'todos'];
+    const validFields = ['parts', 'categories', 'storageLocations', 'builds', 'galleryItems', 'links', 'todos', 'flightLogs'];
     const hasValidData = validFields.some(field => Array.isArray(dataToValidate[field]) && dataToValidate[field].length > 0);
     
     if (!hasValidData) {
@@ -337,10 +444,11 @@ const Settings: React.FC = () => {
         parts: restoreDataArray(dataToRestore.parts, 'droneParts'),
         categories: restoreDataArray(dataToRestore.categories, 'droneCategories'),
         storageLocations: restoreDataArray(dataToRestore.storageLocations, 'storageLocations'),
-        builds: restoreDataArray(dataToRestore.builds, 'droneBuilds'),
-        galleryItems: restoreDataArray(dataToRestore.galleryItems, 'galleryItems'),
-        links: restoreDataArray(dataToRestore.links, 'droneLinks'),
-        todos: restoreDataArray(dataToRestore.todos, 'droneTodos')
+        builds: restoreDataArray(dataToRestore.builds, 'quadparts_builds_data'),
+        galleryItems: restoreDataArray(dataToRestore.galleryItems, 'quadparts_gallery_data'),
+        links: restoreDataArray(dataToRestore.links, 'quadparts_links_data'),
+        todos: restoreDataArray(dataToRestore.todos, 'quadparts_todos_data'),
+        flightLogs: restoreDataArray(dataToRestore.flightLogs, 'flightLogs')
       };
       
       // Handle theme restoration with backward compatibility
@@ -517,7 +625,346 @@ const Settings: React.FC = () => {
            (builds?.length || 0) + 
            (galleryItems?.length || 0) + 
            (links?.length || 0) + 
-           (todos?.length || 0);
+           (todos?.length || 0) + 
+           (flightLogs?.length || 0);
+  };
+
+  // Debug function to check localStorage contents
+  const debugLocalStorage = () => {
+    console.log('=== LocalStorage Debug Info ===');
+    const allKeys = Object.keys(localStorage);
+    console.log('All localStorage keys:', allKeys);
+    
+    const relevantKeys = allKeys.filter(key => 
+      key.includes('gallery') || 
+      key.includes('build') || 
+      key.includes('link') || 
+      key.includes('todo') ||
+      key.includes('quadparts')
+    );
+    
+    console.log('Relevant localStorage keys:', relevantKeys);
+    
+    relevantKeys.forEach(key => {
+      try {
+        const data = localStorage.getItem(key);
+        if (data) {
+          const parsed = JSON.parse(data);
+          console.log(`${key}:`, {
+            type: typeof parsed,
+            isArray: Array.isArray(parsed),
+            length: Array.isArray(parsed) ? parsed.length : 'N/A',
+            keys: typeof parsed === 'object' && parsed !== null ? Object.keys(parsed) : 'N/A'
+          });
+        }
+      } catch (error) {
+        console.error(`Error parsing ${key}:`, error);
+      }
+    });
+    
+    console.log('=== End Debug Info ===');
+  };
+
+  // Function to migrate old build notes data
+  const migrateBuildNotesData = () => {
+    console.log('=== Migrating Build Notes Data ===');
+    
+    const oldKeys = ['builds', 'buildNotes', 'build-notes', 'droneBuilds'];
+    const currentKey = 'quadparts_builds_data';
+    
+    // Check if current key already has data
+    const currentData = localStorage.getItem(currentKey);
+    if (currentData) {
+      console.log('Current builds data already exists, skipping migration');
+      return;
+    }
+    
+    // Look for data in old keys
+    for (const oldKey of oldKeys) {
+      try {
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          const parsed = JSON.parse(oldData);
+          let builds;
+          
+          if (Array.isArray(parsed)) {
+            builds = parsed;
+          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.builds)) {
+            builds = parsed.builds;
+          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
+            builds = parsed.data;
+          }
+          
+          if (builds && builds.length > 0) {
+            // Migrate to current format
+            const migratedData = { builds };
+            localStorage.setItem(currentKey, JSON.stringify(migratedData));
+            console.log(`Migrated ${builds.length} builds from ${oldKey} to ${currentKey}`);
+            addToast('success', `Migrated ${builds.length} build notes from old storage`);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error(`Error migrating from ${oldKey}:`, error);
+      }
+    }
+    
+    console.log('No old build notes data found to migrate');
+    addToast('info', 'No old build notes data found to migrate');
+  };
+
+  // Function to migrate old links data
+  const migrateLinksData = () => {
+    console.log('=== Migrating Links Data ===');
+    
+    const oldKeys = ['links', 'bookmarks', 'favorites', 'droneLinks'];
+    const currentKey = 'quadparts_links_data';
+    
+    // Check if current key already has data
+    const currentData = localStorage.getItem(currentKey);
+    if (currentData) {
+      console.log('Current links data already exists, skipping migration');
+      return;
+    }
+    
+    // Look for data in old keys
+    for (const oldKey of oldKeys) {
+      try {
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          const parsed = JSON.parse(oldData);
+          let links, customTags;
+          
+          if (Array.isArray(parsed)) {
+            links = parsed;
+            customTags = ['tutorial', 'review', 'education', 'guide', 'build'];
+          } else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.links)) {
+              links = parsed.links;
+              customTags = parsed.customTags || ['tutorial', 'review', 'education', 'guide', 'build'];
+            } else if (Array.isArray(parsed.data)) {
+              links = parsed.data;
+              customTags = parsed.customTags || ['tutorial', 'review', 'education', 'guide', 'build'];
+            }
+          }
+          
+          if (links && links.length > 0) {
+            // Migrate to current format
+            const migratedData = { links, customTags };
+            localStorage.setItem(currentKey, JSON.stringify(migratedData));
+            console.log(`Migrated ${links.length} links from ${oldKey} to ${currentKey}`);
+            addToast('success', `Migrated ${links.length} links from old storage`);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error(`Error migrating from ${oldKey}:`, error);
+      }
+    }
+    
+    console.log('No old links data found to migrate');
+    addToast('info', 'No old links data found to migrate');
+  };
+
+  // Function to migrate old todos data
+  const migrateTodosData = () => {
+    console.log('=== Migrating Todos Data ===');
+    
+    const oldKeys = ['todos', 'todo', 'tasks', 'droneTodos'];
+    const currentKey = 'quadparts_todos_data';
+    
+    // Check if current key already has data
+    const currentData = localStorage.getItem(currentKey);
+    if (currentData) {
+      console.log('Current todos data already exists, skipping migration');
+      return;
+    }
+    
+    // Look for data in old keys
+    for (const oldKey of oldKeys) {
+      try {
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          const parsed = JSON.parse(oldData);
+          let todos;
+          
+          if (Array.isArray(parsed)) {
+            todos = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.todos)) {
+              todos = parsed.todos;
+            } else if (parsed && typeof parsed === 'object') {
+              if (Array.isArray(parsed.data)) {
+                todos = parsed.data;
+              }
+            }
+          }
+          
+          if (todos && todos.length > 0) {
+            // Migrate to current format
+            const migratedData = { todos };
+            localStorage.setItem(currentKey, JSON.stringify(migratedData));
+            console.log(`Migrated ${todos.length} todos from ${oldKey} to ${currentKey}`);
+            addToast('success', `Migrated ${todos.length} todos from old storage`);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error(`Error migrating from ${oldKey}:`, error);
+      }
+    }
+    
+    console.log('No old todos data found to migrate');
+    addToast('info', 'No old todos data found to migrate');
+  };
+
+  // Function to migrate old gallery data
+  const migrateGalleryData = () => {
+    console.log('Starting gallery data migration...');
+    
+    // Check multiple possible keys for backward compatibility
+    const possibleKeys = [
+      'galleryItems',
+      'quadparts_gallery_data',
+      'gallery_data',
+      'gallery'
+    ];
+    
+    let migratedCount = 0;
+    let totalFound = 0;
+    
+    possibleKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          console.log(`Found data in key "${key}":`, parsed);
+          
+          if (Array.isArray(parsed)) {
+            totalFound += parsed.length;
+            // Use the store's addItem method to add the data
+            parsed.forEach((item: any) => {
+              if (item && typeof item === 'object') {
+                // Ensure the item has required fields
+                const validItem = {
+                  title: item.title || item.name || 'Untitled',
+                  description: item.description || item.desc || '',
+                  imageUrls: item.imageUrls || (item.imageUrl ? [item.imageUrl] : []),
+                  tags: item.tags || [],
+                  specs: item.specs || {}
+                };
+                addGalleryItem(validItem);
+                migratedCount++;
+              }
+            });
+            localStorage.removeItem(key);
+            console.log(`Migrated ${parsed.length} items from key "${key}"`);
+          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
+            totalFound += parsed.data.length;
+            parsed.data.forEach((item: any) => {
+              if (item && typeof item === 'object') {
+                const validItem = {
+                  title: item.title || item.name || 'Untitled',
+                  description: item.description || item.desc || '',
+                  imageUrls: item.imageUrls || (item.imageUrl ? [item.imageUrl] : []),
+                  tags: item.tags || [],
+                  specs: item.specs || {}
+                };
+                addGalleryItem(validItem);
+                migratedCount++;
+              }
+            });
+            localStorage.removeItem(key);
+            console.log(`Migrated ${parsed.data.length} items from key "${key}"`);
+          }
+        } catch (error) {
+          console.error(`Error parsing data from key "${key}":`, error);
+        }
+      }
+    });
+    
+    if (migratedCount > 0) {
+      addToast('success', `Successfully migrated ${migratedCount} gallery items from old storage`);
+      console.log(`Migration completed: ${migratedCount} items migrated out of ${totalFound} found`);
+    } else {
+      addToast('info', 'No old gallery data found to migrate');
+      console.log('No gallery data found to migrate');
+    }
+  };
+
+  const migrateFlightLogsData = () => {
+    console.log('Starting flight logs data migration...');
+    
+    // Check multiple possible keys for backward compatibility
+    const possibleKeys = [
+      'quadparts_flight_logs',
+      'flightLogs',
+      'flight_logs',
+      'flight-logs'
+    ];
+    
+    let migratedCount = 0;
+    let totalFound = 0;
+    
+    possibleKeys.forEach(key => {
+      const data = localStorage.getItem(key);
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          console.log(`Found data in key "${key}":`, parsed);
+          
+          if (Array.isArray(parsed)) {
+            totalFound += parsed.length;
+            // Use the store's addFlightLog method to add the data
+            parsed.forEach((item: any) => {
+              if (item && typeof item === 'object') {
+                // Ensure the item has required fields
+                const validItem = {
+                  date: item.date || new Date().toISOString().split('T')[0],
+                  drone: item.drone || 'Unknown Drone',
+                  location: item.location || 'Unknown Location',
+                  duration: item.duration || '',
+                  notes: item.notes || '',
+                  issues: item.issues || ''
+                };
+                addFlightLog(validItem);
+                migratedCount++;
+              }
+            });
+            localStorage.removeItem(key);
+            console.log(`Migrated ${parsed.length} items from key "${key}"`);
+          } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.data)) {
+            totalFound += parsed.data.length;
+            parsed.data.forEach((item: any) => {
+              if (item && typeof item === 'object') {
+                const validItem = {
+                  date: item.date || new Date().toISOString().split('T')[0],
+                  drone: item.drone || 'Unknown Drone',
+                  location: item.location || 'Unknown Location',
+                  duration: item.duration || '',
+                  notes: item.notes || '',
+                  issues: item.issues || ''
+                };
+                addFlightLog(validItem);
+                migratedCount++;
+              }
+            });
+            localStorage.removeItem(key);
+            console.log(`Migrated ${parsed.data.length} items from key "${key}"`);
+          }
+        } catch (error) {
+          console.error(`Error parsing data from key "${key}":`, error);
+        }
+      }
+    });
+    
+    if (migratedCount > 0) {
+      addToast('success', `Successfully migrated ${migratedCount} flight log entries from old storage`);
+      console.log(`Migration completed: ${migratedCount} items migrated out of ${totalFound} found`);
+    } else {
+      addToast('info', 'No old flight logs data found to migrate');
+      console.log('No flight logs data found to migrate');
+    }
   };
   
   return (
@@ -599,11 +1046,135 @@ const Settings: React.FC = () => {
                   <option value="blackOrange">Black & Orange</option>
                   <option value="sunset">Sunset</option>
                   <option value="summer">Summer</option>
+                  <option value="custom">Custom</option>
                 </select>
                 <p className="text-xs text-neutral-500 mt-1">
                   Current theme: {theme} | Document attribute: {document.documentElement.getAttribute('data-theme')}
                 </p>
               </div>
+              
+              {/* Custom Color Picker Section */}
+              {showCustomColors && (
+                <div className="liquid-glass border border-white/20 rounded-lg p-4 backdrop-blur-sm">
+                  <h4 className="text-md font-medium text-neutral-300 mb-3">Custom Theme Colors</h4>
+                  
+                  {/* Preset Color Schemes */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">Quick Presets</label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setCustomColors({
+                            bgPrimary: '#1a1a1a',
+                            bgSecondary: '#2d2d2d',
+                            textPrimary: '#ffffff',
+                            textSecondary: '#b0b0b0',
+                            borderColor: '#404040',
+                            accentPrimary: '#3b82f6',
+                            accentSecondary: '#10b981'
+                          });
+                          addToast('success', 'Applied Dark Blue preset');
+                        }}
+                        className="px-3 py-1 liquid-glass border border-white/20 text-white rounded text-sm transition-all duration-300 hover:border-white/30 backdrop-blur-sm hover:shadow-lg"
+                      >
+                        Dark Blue
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCustomColors({
+                            bgPrimary: '#2d1b3d',
+                            bgSecondary: '#4a2c5a',
+                            textPrimary: '#f4e4c1',
+                            textSecondary: '#d4b483',
+                            borderColor: '#c17817',
+                            accentPrimary: '#ff6b35',
+                            accentSecondary: '#f7931e'
+                          });
+                          addToast('success', 'Applied Sunset preset');
+                        }}
+                        className="px-3 py-1 liquid-glass border border-white/20 text-white rounded text-sm transition-all duration-300 hover:border-white/30 backdrop-blur-sm hover:shadow-lg"
+                      >
+                        Sunset
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCustomColors({
+                            bgPrimary: '#1a2f1a',
+                            bgSecondary: '#2d4a2d',
+                            textPrimary: '#e8f5e8',
+                            textSecondary: '#b8d4b8',
+                            borderColor: '#7a9c7a',
+                            accentPrimary: '#4a7c59',
+                            accentSecondary: '#8fbc8f'
+                          });
+                          addToast('success', 'Applied Forest preset');
+                        }}
+                        className="px-3 py-1 liquid-glass border border-white/20 text-white rounded text-sm transition-all duration-300 hover:border-white/30 backdrop-blur-sm hover:shadow-lg"
+                      >
+                        Forest
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCustomColors({
+                            bgPrimary: '#ff6b6b',
+                            bgSecondary: '#4ecdc4',
+                            textPrimary: '#2c3e50',
+                            textSecondary: '#34495e',
+                            borderColor: '#f39c12',
+                            accentPrimary: '#e74c3c',
+                            accentSecondary: '#f1c40f'
+                          });
+                          addToast('success', 'Applied Tropical preset');
+                        }}
+                        className="px-3 py-1 liquid-glass border border-white/20 text-white rounded text-sm transition-all duration-300 hover:border-white/30 backdrop-blur-sm hover:shadow-lg"
+                      >
+                        Tropical
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ColorPicker
+                      label="Background Primary"
+                      value={customColors.bgPrimary}
+                      onChange={(value) => handleCustomColorChange('bgPrimary', value)}
+                    />
+                    <ColorPicker
+                      label="Background Secondary"
+                      value={customColors.bgSecondary}
+                      onChange={(value) => handleCustomColorChange('bgSecondary', value)}
+                    />
+                    <ColorPicker
+                      label="Text Primary"
+                      value={customColors.textPrimary}
+                      onChange={(value) => handleCustomColorChange('textPrimary', value)}
+                    />
+                    <ColorPicker
+                      label="Text Secondary"
+                      value={customColors.textSecondary}
+                      onChange={(value) => handleCustomColorChange('textSecondary', value)}
+                    />
+                    <ColorPicker
+                      label="Border Color"
+                      value={customColors.borderColor}
+                      onChange={(value) => handleCustomColorChange('borderColor', value)}
+                    />
+                    <ColorPicker
+                      label="Accent Primary"
+                      value={customColors.accentPrimary}
+                      onChange={(value) => handleCustomColorChange('accentPrimary', value)}
+                    />
+                    <ColorPicker
+                      label="Accent Secondary"
+                      value={customColors.accentSecondary}
+                      onChange={(value) => handleCustomColorChange('accentSecondary', value)}
+                    />
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-3">
+                    Changes are applied immediately. The liquid glass effect will use your accent colors.
+                  </p>
+                </div>
+              )}
               
               <div>
                 <label htmlFor="currencyFormat" className="block text-sm font-medium text-neutral-300 mb-1">
@@ -679,6 +1250,10 @@ const Settings: React.FC = () => {
                     <span className="text-white ml-2">{todos?.length || 0}</span>
                   </div>
                   <div>
+                    <span className="text-neutral-400">Flight Logs:</span>
+                    <span className="text-white ml-2">{flightLogs?.length || 0}</span>
+                  </div>
+                  <div>
                     <span className="text-neutral-400">Total:</span>
                     <span className="text-white ml-2 font-medium">{getTotalItems()}</span>
                   </div>
@@ -702,6 +1277,48 @@ const Settings: React.FC = () => {
                 >
                   <Download size={14} />
                   {backupInProgress ? 'Creating...' : 'Alternative Download'}
+                </button>
+
+                <button
+                  onClick={debugLocalStorage}
+                  className="flex items-center gap-2 px-4 py-2 liquid-glass border border-blue-500/30 text-blue-400 rounded-lg transition-all duration-300 hover:border-blue-500/50 backdrop-blur-sm hover:shadow-lg text-sm"
+                >
+                  Debug Storage
+                </button>
+
+                <button
+                  onClick={migrateBuildNotesData}
+                  className="flex items-center gap-2 px-4 py-2 liquid-glass border border-green-500/30 text-green-400 rounded-lg transition-all duration-300 hover:border-green-500/50 backdrop-blur-sm hover:shadow-lg text-sm"
+                >
+                  Migrate Build Notes
+                </button>
+
+                <button
+                  onClick={migrateLinksData}
+                  className="flex items-center gap-2 px-4 py-2 liquid-glass border border-purple-500/30 text-purple-400 rounded-lg transition-all duration-300 hover:border-purple-500/50 backdrop-blur-sm hover:shadow-lg text-sm"
+                >
+                  Migrate Links
+                </button>
+
+                <button
+                  onClick={migrateTodosData}
+                  className="flex items-center gap-2 px-4 py-2 liquid-glass border border-pink-500/30 text-pink-400 rounded-lg transition-all duration-300 hover:border-pink-500/50 backdrop-blur-sm hover:shadow-lg text-sm"
+                >
+                  Migrate Todos
+                </button>
+
+                <button
+                  onClick={migrateGalleryData}
+                  className="flex items-center gap-2 px-4 py-2 liquid-glass border border-teal-500/30 text-teal-400 rounded-lg transition-all duration-300 hover:border-teal-500/50 backdrop-blur-sm hover:shadow-lg text-sm"
+                >
+                  Migrate Gallery
+                </button>
+
+                <button
+                  onClick={migrateFlightLogsData}
+                  className="flex items-center gap-2 px-4 py-2 liquid-glass border border-teal-500/30 text-teal-400 rounded-lg transition-all duration-300 hover:border-teal-500/50 backdrop-blur-sm hover:shadow-lg text-sm"
+                >
+                  Migrate Flight Logs
                 </button>
               </div>
               
@@ -829,6 +1446,12 @@ const Settings: React.FC = () => {
                 className="px-3 py-1 liquid-glass border border-white/20 text-white rounded text-sm transition-all duration-300 hover:border-white/30 backdrop-blur-sm hover:shadow-lg"
               >
                 Summer
+              </button>
+              <button
+                onClick={() => setTheme('custom')}
+                className="px-3 py-1 liquid-glass border border-white/20 text-white rounded text-sm transition-all duration-300 hover:border-white/30 backdrop-blur-sm hover:shadow-lg"
+              >
+                Custom
               </button>
             </div>
           </div>

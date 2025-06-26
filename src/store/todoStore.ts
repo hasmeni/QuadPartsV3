@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { TodoItem } from '../models/types';
 
+const STORAGE_KEY = 'quadparts_todos_data';
+
 interface TodoState {
   todos: TodoItem[];
   filteredTodos: TodoItem[];
@@ -52,9 +54,47 @@ const sampleTodos: TodoItem[] = [
   }
 ];
 
+// Load saved data from localStorage
+const loadSavedData = () => {
+  try {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      
+      // Handle different data structures
+      let todos;
+      if (Array.isArray(parsed)) {
+        // If the data is directly an array
+        todos = parsed;
+      } else if (parsed && typeof parsed === 'object') {
+        // If the data is wrapped in an object
+        if (Array.isArray(parsed.todos)) {
+          todos = parsed.todos;
+        } else if (Array.isArray(parsed.data)) {
+          todos = parsed.data;
+        } else {
+          console.warn('Unexpected todos data structure:', parsed);
+          return { todos: sampleTodos };
+        }
+      } else {
+        console.warn('Unexpected todos data structure:', parsed);
+        return { todos: sampleTodos };
+      }
+      
+      console.log(`Loaded ${todos.length} todos from localStorage`);
+      return { todos };
+    }
+  } catch (error) {
+    console.error('Error loading todos data from localStorage:', error);
+  }
+  return { todos: sampleTodos };
+};
+
+const { todos: savedTodos } = loadSavedData();
+
 export const useTodoStore = create<TodoState>((set, get) => ({
-  todos: sampleTodos,
-  filteredTodos: sampleTodos,
+  todos: savedTodos,
+  filteredTodos: savedTodos,
   filterOptions: {
     completed: null, // null means show all, true means show completed only, false means show incomplete only
     priority: ['low', 'medium', 'high'],
@@ -73,6 +113,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       todos: [...state.todos, newTodo]
     }));
     get().applyFilters();
+    
+    // Save to localStorage
+    const { todos } = get();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ todos }));
   },
   
   updateTodo: (id, todoData) => {
@@ -84,6 +128,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       )
     }));
     get().applyFilters();
+    
+    // Save to localStorage
+    const { todos } = get();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ todos }));
   },
   
   deleteTodo: (id) => {
@@ -91,6 +139,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       todos: state.todos.filter((todo) => todo.id !== id)
     }));
     get().applyFilters();
+    
+    // Save to localStorage
+    const { todos } = get();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ todos }));
   },
   
   toggleTodoComplete: (id) => {
@@ -106,6 +158,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       )
     }));
     get().applyFilters();
+    
+    // Save to localStorage
+    const { todos } = get();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ todos }));
   },
   
   setFilterOptions: (options) => {
@@ -167,5 +223,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       todos: state.todos.filter((todo) => !todo.completed)
     }));
     get().applyFilters();
+    
+    // Save to localStorage
+    const { todos } = get();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ todos }));
   }
 }));

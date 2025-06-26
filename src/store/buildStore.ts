@@ -81,17 +81,33 @@ const loadSavedData = () => {
   try {
     const savedData = localStorage.getItem(STORAGE_KEY);
     if (savedData) {
-      const { builds } = JSON.parse(savedData);
+      const parsed = JSON.parse(savedData);
+      
+      // Handle different data structures
+      let builds;
+      if (Array.isArray(parsed)) {
+        // If the data is directly an array
+        builds = parsed;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.builds)) {
+        // If the data is wrapped in an object with 'builds' property
+        builds = parsed.builds;
+      } else {
+        console.warn('Unexpected builds data structure:', parsed);
+        return { builds: sampleBuilds };
+      }
+      
       // Ensure dates are properly parsed
       const parsedBuilds = builds.map((build: any) => ({
         ...build,
         dateCreated: new Date(build.dateCreated).toISOString(),
         lastModified: build.lastModified ? new Date(build.lastModified).toISOString() : undefined,
-        notes: build.notes.map((note: any) => ({
+        notes: Array.isArray(build.notes) ? build.notes.map((note: any) => ({
           ...note,
           dateAdded: new Date(note.dateAdded).toISOString()
-        }))
+        })) : []
       }));
+      
+      console.log(`Loaded ${parsedBuilds.length} builds from localStorage`);
       return { builds: parsedBuilds };
     }
   } catch (error) {

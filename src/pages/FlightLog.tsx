@@ -1,23 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Download, ChevronUp, ChevronDown, Search } from 'lucide-react';
-
-interface FlightLogEntry {
-  id: string;
-  date: string;
-  drone: string;
-  location: string;
-  duration: string;
-  notes: string;
-  issues: string;
-}
-
-const STORAGE_KEY = 'quadparts_flight_logs';
+import { useFlightLogStore, FlightLogEntry } from '../store/flightLogStore';
 
 const FlightLog: React.FC = () => {
-  const [flightLogs, setFlightLogs] = useState<FlightLogEntry[]>(() => {
-    const savedLogs = localStorage.getItem(STORAGE_KEY);
-    return savedLogs ? JSON.parse(savedLogs) : [];
-  });
+  const { flightLogs, addFlightLog, updateFlightLog, deleteFlightLog, setFlightLogs } = useFlightLogStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentLog, setCurrentLog] = useState<FlightLogEntry>({
     id: '',
@@ -38,18 +24,37 @@ const FlightLog: React.FC = () => {
     search: ''
   });
 
+  // Migration function to handle old localStorage data
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(flightLogs));
-  }, [flightLogs]);
+    const migrateOldData = () => {
+      const oldStorageKey = 'quadparts_flight_logs';
+      const oldData = localStorage.getItem(oldStorageKey);
+      
+      if (oldData && flightLogs.length === 0) {
+        try {
+          const parsedData = JSON.parse(oldData);
+          if (Array.isArray(parsedData)) {
+            console.log('Migrating old flight logs data:', parsedData.length, 'entries');
+            setFlightLogs(parsedData);
+            localStorage.removeItem(oldStorageKey);
+            console.log('Migration completed, old data removed');
+          }
+        } catch (error) {
+          console.error('Error migrating flight logs data:', error);
+        }
+      }
+    };
+
+    migrateOldData();
+  }, [flightLogs.length, setFlightLogs]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (currentLog.id) {
-      setFlightLogs(flightLogs.map(log => 
-        log.id === currentLog.id ? currentLog : log
-      ));
+      updateFlightLog(currentLog.id, currentLog);
     } else {
-      setFlightLogs([...flightLogs, { ...currentLog, id: Date.now().toString() }]);
+      const { id, ...logWithoutId } = currentLog;
+      addFlightLog(logWithoutId);
     }
     setIsFormOpen(false);
     setCurrentLog({
@@ -64,7 +69,7 @@ const FlightLog: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    setFlightLogs(flightLogs.filter(log => log.id !== id));
+    deleteFlightLog(id);
   };
 
   const handleEdit = (log: FlightLogEntry) => {

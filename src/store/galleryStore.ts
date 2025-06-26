@@ -75,12 +75,41 @@ const loadSavedData = () => {
   try {
     const savedData = localStorage.getItem(STORAGE_KEY);
     if (savedData) {
-      const { items, customTags } = JSON.parse(savedData);
+      const parsed = JSON.parse(savedData);
+      
+      // Handle different data structures
+      let items, customTags;
+      if (Array.isArray(parsed)) {
+        // If the data is directly an array
+        items = parsed;
+        customTags = initialCustomTags;
+      } else if (parsed && typeof parsed === 'object') {
+        // If the data is wrapped in an object
+        if (Array.isArray(parsed.items)) {
+          items = parsed.items;
+          customTags = parsed.customTags || initialCustomTags;
+        } else if (Array.isArray(parsed.galleryItems)) {
+          items = parsed.galleryItems;
+          customTags = parsed.customTags || initialCustomTags;
+        } else if (Array.isArray(parsed.data)) {
+          items = parsed.data;
+          customTags = parsed.customTags || initialCustomTags;
+        } else {
+          console.warn('Unexpected gallery data structure:', parsed);
+          return { items: sampleItems, customTags: initialCustomTags };
+        }
+      } else {
+        console.warn('Unexpected gallery data structure:', parsed);
+        return { items: sampleItems, customTags: initialCustomTags };
+      }
+      
       // Ensure dates are properly parsed
       const parsedItems = items.map((item: any) => ({
         ...item,
         dateAdded: new Date(item.dateAdded).toISOString()
       }));
+      
+      console.log(`Loaded ${parsedItems.length} gallery items from localStorage`);
       return { items: parsedItems, customTags };
     }
   } catch (error) {

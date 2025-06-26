@@ -61,7 +61,32 @@ const loadSavedData = () => {
   try {
     const savedData = localStorage.getItem(STORAGE_KEY);
     if (savedData) {
-      const { links, customTags } = JSON.parse(savedData);
+      const parsed = JSON.parse(savedData);
+      
+      // Handle different data structures
+      let links, customTags;
+      if (Array.isArray(parsed)) {
+        // If the data is directly an array
+        links = parsed;
+        customTags = initialCustomTags;
+      } else if (parsed && typeof parsed === 'object') {
+        // If the data is wrapped in an object
+        if (Array.isArray(parsed.links)) {
+          links = parsed.links;
+          customTags = parsed.customTags || initialCustomTags;
+        } else if (Array.isArray(parsed.data)) {
+          links = parsed.data;
+          customTags = parsed.customTags || initialCustomTags;
+        } else {
+          console.warn('Unexpected links data structure:', parsed);
+          return { links: sampleLinks, customTags: initialCustomTags };
+        }
+      } else {
+        console.warn('Unexpected links data structure:', parsed);
+        return { links: sampleLinks, customTags: initialCustomTags };
+      }
+      
+      console.log(`Loaded ${links.length} links from localStorage`);
       return { links, customTags };
     }
   } catch (error) {
